@@ -8,6 +8,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.omar.jwt.Entities.AppRole;
 import com.omar.jwt.Entities.AppUser;
+import com.omar.jwt.JWTUtil;
 import com.omar.jwt.Service.AccountService;
 import lombok.Data;
 import org.springframework.security.access.prepost.PostAuthorize;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -82,7 +84,7 @@ public class AccountRestController {
         if (authorizationToken!=null && authorizationToken.startsWith("Bearer")){
             try{
                 String refreshToken =authorizationToken.substring(7);
-                Algorithm algorithm =Algorithm.HMAC256("ThisMysecret23");
+                Algorithm algorithm =Algorithm.HMAC256(JWTUtil.SECRET);
                 JWTVerifier jwtVerifier = JWT.require(algorithm).build();
                 DecodedJWT decodedJWT = jwtVerifier.verify(refreshToken);
                 String username = decodedJWT.getSubject();
@@ -108,6 +110,13 @@ public class AccountRestController {
         else {
             throw new RuntimeException("Refresh token required");
         }
+    }
+
+    @GetMapping(path = "/profile")
+    @PostAuthorize("hasAuthority('USER')")
+    public AppUser profile(Principal principal){
+        return accountService.loadUserByUsername(principal.getName());
+
     }
 }
 
